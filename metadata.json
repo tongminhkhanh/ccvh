@@ -1,0 +1,5 @@
+{
+  "name": "Hệ Thống Chấm Công Ăn Trưa",
+  "description": "Ứng dụng quản lý và chấm công ăn trưa dành cho học sinh, giúp theo dõi sĩ số và báo cáo hàng ngày.",
+  "requestFramePermissions": []
+}
