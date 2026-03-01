@@ -5,6 +5,54 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   @apply font-sans antialiased bg-slate-50 text-slate-900;
+  /* Safe area insets for iPhone notch/dynamic island */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent pull-to-refresh on mobile when scrolling app */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background-color: white !important;
+  }
+
+  #root>div:not(#print-area) {
+    display: none !important;
+  }
+
+  #print-area {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  @page {
+    margin: 1cm;
+    size: A4 portrait;
+  }
 }
