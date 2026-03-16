@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-console.log('[App] Version: 2.0.3 - Build: ' + new Date().toISOString());
+console.log('[App] Version: 2.0.4 - Build: ' + new Date().toISOString());
 
 // Emergency cache clear mechanism
 if (window.location.search.includes('clear-cache=true')) {

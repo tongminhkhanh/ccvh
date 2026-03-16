@@ -2,6 +2,19 @@
 <html lang="vi">
 
 <head>
+  <!-- Emergency Cache Kill Switch -->
+  <script>
+    if (window.location.search.includes('reset=true') || window.location.search.includes('v=204')) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
+          console.log('SW Unregistered');
+          window.location.href = window.location.pathname;
+        });
+      }
+    }
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>LunchPop - Quản lý Bán trú Chuyên nghiệp</title>

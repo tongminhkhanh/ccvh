@@ -31,7 +31,7 @@ export function Dashboard({ stats, config, financialAnalytics, setActiveTab }: D
     console.log('[Dashboard] Rendering with:', { stats, financialAnalytics });
     return (
         <div className="space-y-6 relative">
-            <div className="absolute -top-3 right-0 text-[10px] font-mono text-slate-300">v2.0.3</div>
+            <div className="absolute -top-3 right-0 text-[10px] font-mono text-slate-300">v2.0.4</div>
             {/* Stat cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div

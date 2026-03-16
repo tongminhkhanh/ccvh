@@ -106,7 +106,7 @@ export function Sidebar({ activeTab, setActiveTab, isMobileMenuOpen, setIsMobile
                         <p className="text-sm font-semibold text-slate-800 truncate">Quản trị viên</p>
                         <p className="text-xs text-slate-400 truncate">Việt Hồng</p>
                     </div>
-                    <div className="absolute -top-2 -right-1 bg-slate-800 text-white text-[8px] px-1.5 py-0.5 rounded-full opacity-50">v2.0.3</div>
+                    <div className="absolute -top-2 -right-1 bg-slate-800 text-white text-[8px] px-1.5 py-0.5 rounded-full opacity-50">v2.0.4</div>
                 </div>
             </nav>
         </>
