@@ -42,7 +42,7 @@ export default function App() {
     newStudent, setNewStudent, handleAddStudent, handleDeleteStudent, handleBatchDeleteStudents, handleImport,
     toggleAttendance, markAllPresent, markAllAbsent,
     handleGeneratePayments, handleTogglePayment, handleRemind,
-    handleExportPayments, handleExportReport,
+    handleExportPayments, handleExportReport, handleExportMatrixReport,
     handlePrint, printingPayments,
     handleSaveSettings
   } = useAppData();
@@ -133,6 +133,7 @@ export default function App() {
                   setEndDate={setEndDate}
                   reportData={reportData}
                   handleExportReport={handleExportReport}
+                  handleExportMatrixReport={handleExportMatrixReport}
                 />
               )}
               {activeTab === 'payments' && (

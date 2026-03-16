@@ -13,6 +13,7 @@ import {
     FinancialAnalytics
 } from '../types';
 import { apiService } from '../services/api.service';
+import { exportToMatrixExcel } from '../utils/reportUtils';
 
 export function useAppData() {
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -298,6 +299,19 @@ export function useAppData() {
         }
     };
 
+    const handleExportMatrixReport = async () => {
+        try {
+            setLoading(true);
+            const attendanceRecords = await apiService.getReportDetail(startDate, endDate);
+            exportToMatrixExcel(students, attendanceRecords, startDate, endDate, config.mealPrice);
+        } catch (error) {
+            console.error('Error exporting matrix report:', error);
+            alert('Lỗi xuất báo cáo ma trận');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Actions: Print
     const handlePrint = (id: string) => {
         if (id === 'all') {
@@ -340,7 +354,7 @@ export function useAppData() {
         newStudent, setNewStudent, handleAddStudent, handleDeleteStudent, handleBatchDeleteStudents, handleImport,
         toggleAttendance, markAllPresent, markAllAbsent,
         handleGeneratePayments, handleTogglePayment, handleRemind,
-        handleExportPayments, handleExportReport,
+        handleExportPayments, handleExportReport, handleExportMatrixReport,
         handlePrint, printingPayments,
         handleSaveSettings,
         fetchData

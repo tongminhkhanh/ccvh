@@ -1,4 +1,4 @@
-import { Student, Stats, AttendanceRecord, ReportData, PaymentRecord, Transaction, FinancialAnalytics } from '../types';
+import { Student, Stats, AttendanceRecord, ReportData, PaymentRecord, Transaction, FinancialAnalytics, PaymentStats } from '../types';
 
 const API_BASE = '/api';
 

@@ -19,6 +19,7 @@ interface ReportsProps {
     setEndDate: (v: string) => void;
     reportData: ReportData[];
     handleExportReport: () => void;
+    handleExportMatrixReport: () => void;
 }
 
 export function Reports({
@@ -27,7 +28,8 @@ export function Reports({
     endDate,
     setEndDate,
     reportData,
-    handleExportReport
+    handleExportReport,
+    handleExportMatrixReport
 }: ReportsProps) {
     const [visibleColumns, setVisibleColumns] = useState({
         date: true,
@@ -68,13 +70,22 @@ export function Reports({
                         />
                     </div>
                 </div>
-                <button
-                    onClick={handleExportReport}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-100 transition shadow-sm border border-emerald-100"
-                >
-                    <Download className="w-5 h-5" />
-                    Xuất báo cáo (Excel)
-                </button>
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                    <button
+                        onClick={handleExportReport}
+                        className="flex items-center justify-center gap-2 bg-slate-50 text-slate-700 px-6 py-2.5 rounded-xl font-bold hover:bg-slate-100 transition shadow-sm border border-slate-200"
+                    >
+                        <Download className="w-5 h-5" />
+                        Chi tiết (Dọc)
+                    </button>
+                    <button
+                        onClick={handleExportMatrixReport}
+                        className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-100 transition shadow-sm border border-emerald-100"
+                    >
+                        <Download className="w-5 h-5" />
+                        Mẫu Ma trận (Ngang)
+                    </button>
+                </div>
             </div>
 
             {/* Chart */}
