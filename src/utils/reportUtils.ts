@@ -17,22 +17,26 @@ export const processMatrixData = (
     startDate: string,
     endDate: string
 ): { days: string[], rows: MatrixRow[] } => {
-    // 1. Generate date list
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // 1. Generate date list (Safe from timezone shift)
     const days: string[] = [];
-    const current = new Date(start);
+    let curr = new Date(startDate);
+    const end = new Date(endDate);
 
-    while (current <= end) {
-        days.push(current.toISOString().split('T')[0]);
-        current.setDate(current.getDate() + 1);
+    while (curr <= end) {
+        const y = curr.getFullYear();
+        const m = String(curr.getMonth() + 1).padStart(2, '0');
+        const d = String(curr.getDate()).padStart(2, '0');
+        days.push(`${y}-${m}-${d}`);
+        curr.setDate(curr.getDate() + 1);
     }
 
     // 2. Map attendance for quick lookup
     const attendanceMap = new Set<string>();
     attendanceRecords.forEach(rec => {
         if (rec.status === 'present') {
-            attendanceMap.add(`${rec.student_id}_${rec.date.split('T')[0]}`);
+            // Ensure we use the YYYY-MM-DD part only
+            const dateStr = rec.date.includes('T') ? rec.date.split('T')[0] : rec.date;
+            attendanceMap.add(`${rec.student_id}_${dateStr}`);
         }
     });
 
