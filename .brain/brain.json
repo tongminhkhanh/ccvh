@@ -1,0 +1,119 @@
+{
+    "meta": {
+        "schema_version": "1.1.0",
+        "awf_version": "3.3.0"
+    },
+    "project": {
+        "name": "LunchPop Professional",
+        "type": "Web Application (SPA + Serverless Backend)",
+        "status": "Production Deployment"
+    },
+    "tech_stack": {
+        "frontend": {
+            "framework": "React (Vite)",
+            "styling": "Tailwind CSS",
+            "icons": "lucide-react",
+            "animations": "motion/react",
+            "charts": "recharts"
+        },
+        "backend": {
+            "framework": "Express",
+            "platform": "Vercel Serverless Functions"
+        },
+        "database": {
+            "db": "Turso (LibSQL)",
+            "client": "@libsql/client"
+        }
+    },
+    "database_schema": {
+        "summary": "Ứng dụng quản lý lịch ăn học sinh bản chuyên nghiệp, bao gồm: Danh sách học sinh, Thông tin chấm công (có/vắng ăn), Bảng thu phí hàng tháng.",
+        "tables": [
+            {
+                "name": "students",
+                "columns": [
+                    "id",
+                    "name",
+                    "student_code",
+                    "class_name",
+                    "note",
+                    "is_deleted"
+                ]
+            },
+            {
+                "name": "attendance",
+                "columns": [
+                    "id",
+                    "student_id",
+                    "date",
+                    "status"
+                ]
+            },
+            {
+                "name": "payments",
+                "columns": [
+                    "id",
+                    "student_id",
+                    "month",
+                    "total_meals",
+                    "meal_price",
+                    "amount",
+                    "status",
+                    "note",
+                    "created_at"
+                ]
+            }
+        ],
+        "relationships_explained": "Bảng students là bảng trung tâm. Bảng attendance lưu trữ lịch học của 1 student_id trong 1 ngày (date). Bảng payments gộp sổ số bữa ăn trong 1 tháng (month) để tính tổng amount (Thành tiền)."
+    },
+    "api_endpoints": [
+        {
+            "path": "/api/students",
+            "method": [
+                "GET",
+                "POST",
+                "DELETE",
+                "PUT"
+            ],
+            "explained": "CRUD Học sinh: Lấy danh sách, thêm học sinh mới (cần check mã HS trùng lặp), cập nhật, và xoá mềm đổi is_deleted = 1."
+        },
+        {
+            "path": "/api/students/batch-delete",
+            "method": [
+                "POST"
+            ],
+            "explained": "Xoá nhiều HS cùng lúc (truyền mảng ids)."
+        },
+        {
+            "path": "/api/attendance/:date",
+            "method": [
+                "GET",
+                "POST"
+            ],
+            "explained": "Hệ thống điểm danh ăn: GET để tải danh sách các bạn đang điểu danh trong ngày, POST để lưu lại trạng thái."
+        },
+        {
+            "path": "/api/reports",
+            "method": [
+                "GET"
+            ],
+            "explained": "Lấy dữ liệu thống kê tổng số lượng bữa ăn và tiền theo các khoảng ngày (startDate, endDate)."
+        },
+        {
+            "path": "/api/payments",
+            "method": [
+                "GET",
+                "POST",
+                "PUT"
+            ],
+            "explained": "Quản lý phiếu báo thu phí tháng: POST để sinh phiếu tự động tuỳ vào số lượng điểm danh, GET xem danh sách nợ/đã thu, PUT cập nhật trạng thái đã thu tiền."
+        }
+    ],
+    "features": [
+        "Quản lý danh sách học sinh theo lớp",
+        "Chấm ăn/vắng/phép hàng ngày cho học sinh",
+        "Tổng hợp biểu đồ thống kê chuyên cần",
+        "Trích xuất số lượng bữa ăn để tính Phiếu thu tiền hàng tháng",
+        "Xuất danh sách sang file Excel",
+        "Báo cáo thống kê toàn diện (Dashboard & Reports)"
+    ]
+}

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://lunchpop.vercel.app/sitemap.xml

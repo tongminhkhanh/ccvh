@@ -1,0 +1,77 @@
+{
+    "updated_at": "2026-03-01T23:25:00Z",
+    "working_on": {
+        "feature": "Mobile UI Design & Vercel Deploy",
+        "task": "Nâng cấp giao diện Mobile",
+        "status": "done",
+        "files": [
+            "src/App.tsx",
+            "server.ts",
+            "api/index.ts",
+            "vercel.json"
+        ],
+        "blockers": [],
+        "notes": "Đã đổi Sidebar dạng bottom ngang thành menu trượt, thêm class overflow-x-auto, fix các column layout."
+    },
+    "pending_tasks": [],
+    "recent_changes": [
+        {
+            "timestamp": "2026-03-01T23:20:00Z",
+            "type": "feature",
+            "description": "Tối ưu hóa UI Mobile và cập nhật tên trường khi in Phiếu thu",
+            "files": [
+                "src/App.tsx"
+            ]
+        },
+        {
+            "timestamp": "2026-03-01T22:30:00Z",
+            "type": "deploy",
+            "description": "Bóc tách Express sang Serverless API và Deploy lên Vercel",
+            "files": [
+                "api/index.ts",
+                "server.ts",
+                "vercel.json"
+            ]
+        },
+        {
+            "timestamp": "2026-03-01T15:XX:00Z",
+            "type": "feature",
+            "description": "Chức năng xoá nhiều học sinh cùng lúc",
+            "files": [
+                "src/App.tsx",
+                "server.ts"
+            ]
+        },
+        {
+            "timestamp": "2026-03-01T14:40:00Z",
+            "type": "design",
+            "description": "Redesign toàn bộ ứng dụng sang bản Stitch Electric Blue",
+            "files": [
+                "src/App.tsx",
+                "index.css"
+            ]
+        }
+    ],
+    "errors_encountered": [
+        {
+            "error": "Code bị thiếu tag đóng thẻ <div> ở template App.tsx trong Navbar",
+            "solution": "Kiểm tra bằng TSX format và fix tag thiếu.",
+            "resolved": true
+        },
+        {
+            "error": "Lỗi resetDB",
+            "solution": "Tạo script riêng reset_db.ts chạy độc lập node npx tsx reset_db.ts",
+            "resolved": true
+        }
+    ],
+    "decisions_made": [
+        {
+            "decision": "App deployed to Vercel",
+            "reason": "Serverless chạy ổn định, không tốn tài nguyên cá nhân."
+        },
+        {
+            "decision": "Thêm thanh Cuộn ngang (overflow-x-auto) trên Desktop và Phone",
+            "reason": "Layout Table báo cáo điểm danh quá rộng dễ gây vỡ Flex của toàn trang"
+        }
+    ]
+}

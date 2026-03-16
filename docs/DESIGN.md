@@ -1,42 +1,51 @@
-# 🎨 DESIGN: Tính Năng "Chấm Ăn Tất Cả" (Mark All Present)
+# 🎨 DESIGN: LunchPop PWA (Progressive Web App)
 
-Ngày tạo: 01/03/2026
-Dựa trên: Yêu cầu Thêm nút chấm tất cả học sinh
-
----
-
-## 1. Cách Lưu Thông Tin (Database)
-
-Vì việc bấm liên tục để gọi API cho mỗi học sinh có thể làm chậm ứng dụng, chúng ta sẽ thêm một API Batch mới:
-
-**Mới:** `POST /api/attendance/batch`
-- **Mục đích:** Gửi một mảng danh sách các học sinh (cùng ID và trạng thái) để server lưu vào CSDL (SQLite) trong 1 lần duy nhất, thay vì phải lưu từng bé.
-- **Dữ liệu gửi lên:** `[ { student_id: 1, date: '2026-03-01', status: 'present' }, ... ]`
-
-## 2. Giao diện (UI) trên Màn hình Chấm Công
-
-| Vị trí | Thiết kế | Chức năng | 
-|---|---|---|
-| Cột thẻ (Action) | Nút mờ/ẩn phía trên cùng danh sách | Nút `✅ Chọn tất cả` được gắn kèm ở góc hoặc ngay trên danh sách điểm danh hàng ngày. |
-| Dòng Học sinh | Nút tick/bỏ tick | Các nút vẫn giữ nguyên màu xanh/ám đỏ như cũ nhưng sẽ tự động cập nhật nếu bấm `Chọn tất cả`. |
-
-## 3. Luồng Hoạt Động Của Giáo Viên
-
-**Hành trình tiêu chuẩn để chấm ăn nhanh:**
-1. Mở app, vào tab **Chấm công**. (Mặc định là ngày hôm nay).
-2. Giáo viên nhấn nút **"✅ Chọn tất cả"**. Toàn bộ học sinh trong bảng sẽ được tự động đổi sang trạng thái `Có ăn` (Màu xanh).
-3. Hệ thống sẽ **gọi 1 API duy nhất** để cập nhật trạng thái của tất cả trẻ nhỏ xuống server. Cực nhanh và mượt mà.
-4. Đối với bé nào **Không ăn** hoặc **Nghỉ phép**, giáo viên kéo chuột xuống và bấm vào nút trạng thái của bé đó để đổi (như cũ).
-
-## 4. Checklist Kiểm Tra (Acceptance Criteria)
-
-### Tính năng: Chọn tất cả (Chấm ăn hàng loạt)
-- [ ] Bấm "Chọn tất cả" -> Trạng thái hiển thị của toàn lớp chuyển sang "Có ăn".
-- [ ] Ứng dụng không bị giật/đơ (lag) khi chấm cho lớp đông.
-- [ ] Tắt/mở lại tab hoặc load lại trang, tất cả học sinh vẫn hiển thị đúng là đã được "Có ăn".
-- [ ] Nút chỉ hiển thị / hoạt động ở Tab "Chấm công".
-- [ ] Có thể dễ dàng đổi trạng thái của 1 vài học sinh thành "Không ăn" ngay sau đó.
+Ngày tạo: 2026-03-01
+Dựa trên: Workflow /design
 
 ---
 
-*Tạo bởi AWF 4.0 - Design Phase*
+## 1. Cách Lưu Thông Tin (PWA Architecture)
+
+Để biến web thành App, chúng ta không cần đổi cơ sở dữ liệu. Chúng ta chỉ cần cung cấp cho điện thoại 2 file "căn cước công dân" của ứng dụng:
+
+┌─────────────────────────────────────────────────────────────┐
+│  📄 Chọn Tên & Màu Sắc (manifest.json)                      │
+│  ├── Tên hiển thị trên màn hình: LunchPop                   │
+│  ├── Màu nền lúc mở app (Splash Screen): #3A86FF            │
+│  └── Biểu tượng (Icon): Bộ logo kích thước 192px/512px      │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  🤖 Người Hỗ Trợ Đứng Sau (Service Worker)                  │
+│  ├── Nhiệm vụ 1: Báo cho ĐT biết "Tôi là App cài đặt được"    │
+│  └── Nhiệm vụ 2: Lưu sẵn file CSS/JS để mở App cực nhanh    │
+└─────────────────────────────────────────────────────────────┘
+
+## 2. Luồng Hoạt Động Cài Đặt (User Journey)
+
+Đây là 'hành trình' cài App của 1 Giáo viên:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📍 HÀNH TRÌNH: Thêm App vào màn hình chính
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Giáo viên mở Safari (iPhone) hoặc Chrome (Android) và vào link `ccvh.vercel.app`
+2️⃣ Điện thoại tự động nhận diện đây là PWA.
+3️⃣ Trình duyệt hiện popup gợi ý (nếu Android) hoặc ấn nút Share -> "Thêm vào màn hình chính" (nếu iOS).
+4️⃣ Sau khi ấn đồng ý, Icon App sẽ tải thẳng ra màn hình hiển thị điện thoại cùng các app khác.
+5️⃣ Lần sau chỉ cần bấm Icon là dùng luôn, giao diện Full Screen mượt mà (Không còn dính thanh URL của trình duyệt).
+
+## 3. Checklist Kiểm Tra Kỹ Thuật
+
+### Tính năng: PWA Setup
+
+- [ ] Chuẩn bị và Tạo folder `public/icons` chứa các bản Image Icon (192x192, 512x512).
+- [ ] Cài đặt Plugin vite `vite-plugin-pwa` để cấu hình PWA Injection tự động.
+- [ ] Chỉnh sửa `vite.config.ts` để tiêm Script sinh (manifest + sw) khi build chạy.
+- [ ] Render thử trên Localhost, mở Chrome DevTools (Tab Application > Manifest) xem Trình duyệt có hiện nút `Install App` hợp lệ không.
+
+---
+
+*Tạo bởi AWF 2.1 - Design Phase*
