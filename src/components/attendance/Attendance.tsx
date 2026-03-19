@@ -27,14 +27,20 @@ export function Attendance({
     markAllPresent,
     markAllAbsent
 }: AttendanceProps) {
+    const presentStudentIds = new Set(
+        attendance
+            .filter(a => a.status === 'present')
+            .map(a => a.student_id)
+    );
+
     const filteredStudents = students.filter(s =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.student_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.class_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const presentCount = attendance.length;
-    const absentCount = filteredStudents.length - filteredStudents.filter(s => attendance.find(a => a.student_id === s.id)).length;
+    const presentCount = filteredStudents.filter(student => presentStudentIds.has(student.id)).length;
+    const absentCount = filteredStudents.length - presentCount;
 
     return (
         <div className="space-y-5">
@@ -89,8 +95,7 @@ export function Attendance({
             {/* Student cards grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {filteredStudents.map((student) => {
-                    const record = attendance.find(a => a.student_id === student.id);
-                    const isPresent = !!record;
+                    const isPresent = presentStudentIds.has(student.id);
 
                     return (
                         <motion.button

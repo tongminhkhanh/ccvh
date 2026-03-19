@@ -53,22 +53,42 @@ export const apiService = {
         return res.json();
     },
 
-    async updateAttendance(data: { student_id: number; date: string; status: string }): Promise<void> {
+    async updateAttendance(data: { student_id: number; date: string }): Promise<void> {
         const res = await fetch(`${API_BASE}/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ ...data, status: 'present' })
         });
         if (!res.ok) throw new Error('Failed to update attendance');
     },
 
-    async batchUpdateAttendance(data: { items: { student_id: number; date: string; status: string }[] }): Promise<void> {
+    async deleteAttendance(data: { student_id: number; date: string }): Promise<void> {
+        const res = await fetch(`${API_BASE}/attendance`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to delete attendance');
+    },
+
+    async batchUpdateAttendance(data: { items: { student_id: number; date: string }[] }): Promise<void> {
         const res = await fetch(`${API_BASE}/attendance/batch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: data.items.map(item => ({ ...item, status: 'present' }))
+            })
+        });
+        if (!res.ok) throw new Error('Failed to batch update attendance');
+    },
+
+    async batchDeleteAttendance(data: { studentIds: number[]; date: string }): Promise<void> {
+        const res = await fetch(`${API_BASE}/attendance/batch-delete`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error('Failed to batch update attendance');
+        if (!res.ok) throw new Error('Failed to batch delete attendance');
     },
 
     // Payments & Transactions

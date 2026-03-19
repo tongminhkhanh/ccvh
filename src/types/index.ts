@@ -14,7 +14,7 @@ export interface AttendanceRecord {
     name: string;
     student_code: string;
     class_name: string;
-    status: 'present';
+    status: 'present' | 'absent';
 }
 
 export interface Stats {

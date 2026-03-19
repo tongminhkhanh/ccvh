@@ -588,7 +588,8 @@ app.post("/api/students/import", upload.single("file"), async (req, res) => {
   }
 });
 
-// Mark attendance (Upsert) - Modified to update balance
+// Mark attendance using the normalized model:
+// present = row exists, absent = row does not exist
 app.post("/api/attendance", async (req, res) => {
   const { student_id, date, status } = req.body;
   try {
@@ -597,28 +598,34 @@ app.post("/api/attendance", async (req, res) => {
       args: [student_id, date]
     });
     const prevStatus = prev.rows[0]?.status || 'absent';
-    const newStatus = status || 'present';
+    const newStatus = status === 'present' ? 'present' : 'absent';
 
     if (prevStatus === newStatus) {
       return res.json({ success: true, message: "No change" });
     }
 
-    const statements = [];
-    statements.push({
-      sql: `INSERT INTO attendance (student_id, date, status) 
-              VALUES (?, ?, ?)
-              ON CONFLICT(student_id, date) DO UPDATE SET status = excluded.status`,
-      args: [student_id, date, newStatus]
-    });
+    if (newStatus === 'present') {
+      await db.execute({
+        sql: `INSERT INTO attendance (student_id, date, status) 
+                VALUES (?, ?, 'present')
+                ON CONFLICT(student_id, date) DO UPDATE SET status = 'present'`,
+        args: [student_id, date]
+      });
+    } else {
+      await db.execute({
+        sql: "DELETE FROM attendance WHERE student_id = ? AND date = ?",
+        args: [student_id, date]
+      });
+    }
 
-    await db.batch(statements, "write");
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Batch mark attendance - Modified to update balance
+// Batch attendance updates with the normalized model:
+// present = upsert, absent = delete
 app.post("/api/attendance/batch", async (req, res) => {
   const { items } = req.body;
   if (!Array.isArray(items) || items.length === 0) {
@@ -629,19 +636,17 @@ app.post("/api/attendance/batch", async (req, res) => {
     const allStatements: any[] = [];
 
     for (const item of items) {
-      const prev = await db.execute({
-        sql: "SELECT status FROM attendance WHERE student_id = ? AND date = ?",
-        args: [item.student_id, item.date]
-      });
-      const prevStatus = prev.rows[0]?.status || 'absent';
-      const newStatus = item.status || 'present';
-
-      if (prevStatus !== newStatus) {
+      if (item.status === 'present') {
         allStatements.push({
           sql: `INSERT INTO attendance (student_id, date, status) 
-                    VALUES (?, ?, ?)
-                    ON CONFLICT(student_id, date) DO UPDATE SET status = excluded.status`,
-          args: [item.student_id, item.date, newStatus]
+                    VALUES (?, ?, 'present')
+                    ON CONFLICT(student_id, date) DO UPDATE SET status = 'present'`,
+          args: [item.student_id, item.date]
+        });
+      } else {
+        allStatements.push({
+          sql: "DELETE FROM attendance WHERE student_id = ? AND date = ?",
+          args: [item.student_id, item.date]
         });
       }
     }
@@ -678,26 +683,14 @@ app.post("/api/attendance/batch-delete", async (req, res) => {
   }
 });
 
-// Remove attendance (considered marking absent)
+// Remove attendance (equivalent to marking absent in the normalized model)
 app.delete("/api/attendance", async (req, res) => {
   const { student_id, date } = req.body;
   try {
-    const prev = await db.execute({
-      sql: "SELECT status FROM attendance WHERE student_id = ? AND date = ?",
+    await db.execute({
+      sql: "DELETE FROM attendance WHERE student_id = ? AND date = ?",
       args: [student_id, date]
     });
-    const prevStatus = prev.rows[0]?.status;
-
-    if (prevStatus === 'present') {
-      const fees = await getFees();
-      const creditAmount = fees.mealPrice + fees.supervisionFee;
-      await db.batch([
-        { sql: "UPDATE students SET balance = balance + ? WHERE id = ?", args: [creditAmount, student_id] },
-        { sql: "DELETE FROM attendance WHERE student_id = ? AND date = ?", args: [student_id, date] }
-      ], "write");
-    } else {
-      await db.execute({ sql: "DELETE FROM attendance WHERE student_id = ? AND date = ?", args: [student_id, date] });
-    }
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -711,7 +704,7 @@ app.get("/api/attendance/:date", async (req, res) => {
       sql: `SELECT a.*, s.name, s.student_code, s.class_name 
               FROM attendance a
               JOIN students s ON a.student_id = s.id
-              WHERE a.date = ?`,
+              WHERE a.date = ? AND a.status = 'present'`,
       args: [req.params.date]
     });
     res.json(rs.rows);
@@ -736,10 +729,10 @@ app.get("/api/reports", async (req, res) => {
     const totalStudents = Number(rsStudents.rows[0].count);
 
     const rsData = await db.execute({
-      sql: `SELECT date, status, COUNT(*) as count
+      sql: `SELECT date, COUNT(*) as count
               FROM attendance
-              WHERE date BETWEEN ? AND ?
-              GROUP BY date, status
+              WHERE date BETWEEN ? AND ? AND status = 'present'
+              GROUP BY date
               ORDER BY date ASC`,
       args: [start as string, end as string]
     });
@@ -752,8 +745,7 @@ app.get("/api/reports", async (req, res) => {
         groupedData.set(rowDate, { date: rowDate, present: 0, total: totalStudents });
       }
       const entry = groupedData.get(rowDate);
-      if (row.status === 'present') entry.present = Number(row.count);
-
+      entry.present = Number(row.count);
     });
 
     res.json(Array.from(groupedData.values()));
@@ -779,7 +771,7 @@ app.get("/api/reports/detail", async (req, res) => {
 
     // Get attendance records in date range
     const rsAttendance = await db.execute({
-      sql: `SELECT student_id, date, status FROM attendance WHERE date BETWEEN ? AND ? ORDER BY date, student_id`,
+      sql: `SELECT student_id, date FROM attendance WHERE date BETWEEN ? AND ? AND status = 'present' ORDER BY date, student_id`,
       args: [start as string, end as string]
     });
 
@@ -807,7 +799,7 @@ app.get("/api/reports/detail", async (req, res) => {
           student_code: student.student_code as string,
           class_name: student.class_name as string,
           date,
-          status: record ? (record.status as string) : 'absent'
+          status: record ? 'present' : 'absent'
         });
       }
     }
@@ -828,19 +820,14 @@ app.get("/api/stats", async (req, res) => {
     const totalStudents = Number(rsTotal.rows[0].count);
 
     const rsStats = await db.execute({
-      sql: `SELECT a.status, COUNT(*) as count 
+      sql: `SELECT COUNT(*) as count 
               FROM attendance a
               JOIN students s ON a.student_id = s.id AND s.status = 'active'
-              WHERE a.date = ? 
-              GROUP BY a.status`,
+              WHERE a.date = ? AND a.status = 'present'`,
       args: [targetDate]
     });
 
-    let presentToday = 0;
-
-    rsStats.rows.forEach(s => {
-      if (s.status === 'present') presentToday = Number(s.count);
-    });
+    const presentToday = Number(rsStats.rows[0]?.count) || 0;
 
     res.json({
       totalStudents,

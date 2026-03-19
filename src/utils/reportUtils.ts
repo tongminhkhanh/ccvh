@@ -5,62 +5,74 @@ export interface MatrixRow {
     stt: number;
     name: string;
     class_name: string;
-    attendance: { [date: string]: string }; // 'X' or ''
+    attendance: { [date: string]: string };
     total_meals: number;
     total_absent: number;
     note: string;
 }
+
+const parseDateString = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+};
+
+const formatDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const isWeekday = (date: Date) => {
+    const day = date.getDay();
+    return day >= 1 && day <= 5;
+};
 
 export const processMatrixData = (
     students: Student[],
     attendanceRecords: any[],
     startDate: string,
     endDate: string
-): { days: string[], rows: MatrixRow[] } => {
-    // 1. Generate date list (Safe from timezone shift)
+): { days: string[]; rows: MatrixRow[] } => {
     const days: string[] = [];
-    let curr = new Date(startDate);
-    const end = new Date(endDate);
+    let curr = parseDateString(startDate);
+    const end = parseDateString(endDate);
 
     while (curr <= end) {
-        const y = curr.getFullYear();
-        const m = String(curr.getMonth() + 1).padStart(2, '0');
-        const d = String(curr.getDate()).padStart(2, '0');
-        days.push(`${y}-${m}-${d}`);
+        if (isWeekday(curr)) {
+            days.push(formatDateString(curr));
+        }
         curr.setDate(curr.getDate() + 1);
     }
 
-    // 2. Map attendance for quick lookup
     const attendanceMap = new Set<string>();
     attendanceRecords.forEach(rec => {
         if (rec.status === 'present') {
-            // Ensure we use the YYYY-MM-DD part only
             const dateStr = rec.date.includes('T') ? rec.date.split('T')[0] : rec.date;
             attendanceMap.add(`${rec.student_id}_${dateStr}`);
         }
     });
 
-    // 3. Process rows
-    const rows: MatrixRow[] = students.map((s, index) => {
+    const rows: MatrixRow[] = students.map((student, index) => {
         const studentAttendance: { [date: string]: string } = {};
         let meals = 0;
         let absent = 0;
 
         days.forEach(day => {
-            const isPresent = attendanceMap.has(`${s.id}_${day}`);
+            const isPresent = attendanceMap.has(`${student.id}_${day}`);
             if (isPresent) {
                 studentAttendance[day] = 'X';
-                meals++;
+                meals += 1;
             } else {
                 studentAttendance[day] = '';
-                absent++;
+                absent += 1;
             }
         });
 
         return {
             stt: index + 1,
-            name: s.name,
-            class_name: s.class_name,
+            name: student.name,
+            class_name: student.class_name,
             attendance: studentAttendance,
             total_meals: meals,
             total_absent: absent,
@@ -79,78 +91,72 @@ export const exportToMatrixExcel = (
     mealPrice: number
 ) => {
     const { days, rows } = processMatrixData(students, attendanceRecords, startDate, endDate);
+    const displayDays = days.length > 0 ? days : [''];
+    const displayDayHeaders: Array<number | string> = days.length > 0 ? days.map(day => Number(day.slice(-2))) : [''];
 
-    // Format display dates (only day number for matrix header)
-    const dayHeaders = days.map(d => new Date(d).getDate());
-
-    // Create worksheet data
     const wsData: any[][] = [];
 
-    // Header Rows
     wsData.push(['BÁO CÁO CHẤM CÔNG ĂN TRƯA']);
-    wsData.push([`Từ ngày: ${new Date(startDate).toLocaleDateString('vi-VN')} - ${new Date(endDate).toLocaleDateString('vi-VN')}`]);
+    wsData.push([
+        `Từ ngày: ${parseDateString(startDate).toLocaleDateString('vi-VN')} - ${parseDateString(endDate).toLocaleDateString('vi-VN')}`
+    ]);
     wsData.push([`Đơn giá: ${mealPrice.toLocaleString()}đ/bữa`]);
-    wsData.push([]); // Gap
+    wsData.push([]);
 
-    // Table Header Row 1
-    const headerRow1 = ['STT', 'Họ và Tên', 'Lớp', 'Ngày', ...new Array(days.length - 1).fill(''), 'Số ngày ăn', 'Số ngày nghỉ', 'Ghi chú'];
+    const headerRow1 = [
+        'STT',
+        'Họ và Tên',
+        'Lớp',
+        'Ngày',
+        ...new Array(displayDays.length - 1).fill(''),
+        'Số ngày ăn',
+        'Số ngày nghỉ',
+        'Ghi chú'
+    ];
     wsData.push(headerRow1);
 
-    // Table Header Row 2 (Specific days)
-    const headerRow2 = ['', '', '', ...dayHeaders, '', '', ''];
+    const headerRow2 = ['', '', '', ...displayDayHeaders, '', '', ''];
     wsData.push(headerRow2);
 
-    // Add Data Rows
     rows.forEach(row => {
-        const rowData = [
+        wsData.push([
             row.stt,
             row.name,
             row.class_name,
-            ...days.map(d => row.attendance[d]),
+            ...(days.length > 0 ? days.map(day => row.attendance[day]) : ['']),
             row.total_meals,
             row.total_absent,
             row.note
-        ];
-        wsData.push(rowData);
+        ]);
     });
 
-    // Add Total Row
-    const totalMeals = rows.reduce((sum, r) => sum + r.total_meals, 0);
-    const totalRow = ['TỔNG CỘNG', '', '', ...new Array(days.length).fill(''), totalMeals, '', ''];
-    wsData.push(totalRow);
+    const totalMeals = rows.reduce((sum, row) => sum + row.total_meals, 0);
+    wsData.push(['TỔNG CỘNG', '', '', ...new Array(displayDays.length).fill(''), totalMeals, '', '']);
 
-    // Create workbook and worksheet
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Define Merges
-    const merges = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 + days.length + 3 } }, // Title
-        { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }, // STT
-        { s: { r: 4, c: 1 }, e: { r: 5, c: 1 } }, // Name
-        { s: { r: 4, c: 2 }, e: { r: 5, c: 2 } }, // Class
-        { s: { r: 4, c: 3 }, e: { r: 4, c: 3 + days.length - 1 } }, // "Ngày" header
-        { s: { r: 4, c: 3 + days.length }, e: { r: 5, c: 3 + days.length } }, // Total Meals
-        { s: { r: 4, c: 3 + days.length + 1 }, e: { r: 5, c: 3 + days.length + 1 } }, // Total Absent
-        { s: { r: 4, c: 3 + days.length + 2 }, e: { r: 5, c: 3 + days.length + 2 } }, // Note
-        { s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: 2 } } // Total text
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 + displayDays.length + 3 } },
+        { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } },
+        { s: { r: 4, c: 1 }, e: { r: 5, c: 1 } },
+        { s: { r: 4, c: 2 }, e: { r: 5, c: 2 } },
+        { s: { r: 4, c: 3 }, e: { r: 4, c: 3 + displayDays.length - 1 } },
+        { s: { r: 4, c: 3 + displayDays.length }, e: { r: 5, c: 3 + displayDays.length } },
+        { s: { r: 4, c: 3 + displayDays.length + 1 }, e: { r: 5, c: 3 + displayDays.length + 1 } },
+        { s: { r: 4, c: 3 + displayDays.length + 2 }, e: { r: 5, c: 3 + displayDays.length + 2 } },
+        { s: { r: wsData.length - 1, c: 0 }, e: { r: wsData.length - 1, c: 2 } }
     ];
-    ws['!merges'] = merges;
 
-    // Set Column Widths
-    const wscols = [
-        { wch: 5 },  // STT
-        { wch: 25 }, // Name
-        { wch: 10 }, // Class
-        ...days.map(() => ({ wch: 4 })), // Days
-        { wch: 12 }, // Total Meals
-        { wch: 12 }, // Total Absent
-        { wch: 15 }  // Note
+    ws['!cols'] = [
+        { wch: 5 },
+        { wch: 25 },
+        { wch: 10 },
+        ...displayDays.map(() => ({ wch: 4 })),
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 }
     ];
-    ws['!cols'] = wscols;
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Chấm công');
-
-    // Trigger Download
     XLSX.writeFile(wb, `Bao_Cao_Ma_Tran_${startDate}_${endDate}.xlsx`);
 };

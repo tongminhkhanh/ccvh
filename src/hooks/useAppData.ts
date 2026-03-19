@@ -108,12 +108,18 @@ export function useAppData() {
     // Actions: Attendance
     const toggleAttendance = async (studentId: number) => {
         try {
-            const isPresent = attendance.some(a => a.student_id === studentId);
-            await apiService.updateAttendance({
-                student_id: studentId,
-                date: selectedDate,
-                status: isPresent ? 'absent' : 'present'
-            });
+            const isPresent = attendance.some(a => a.student_id === studentId && a.status === 'present');
+            if (isPresent) {
+                await apiService.deleteAttendance({
+                    student_id: studentId,
+                    date: selectedDate
+                });
+            } else {
+                await apiService.updateAttendance({
+                    student_id: studentId,
+                    date: selectedDate
+                });
+            }
             fetchData();
         } catch (error) {
             console.error('Error toggling attendance:', error);
@@ -125,8 +131,7 @@ export function useAppData() {
             setLoading(true);
             const items = students.map(s => ({
                 student_id: s.id,
-                date: selectedDate,
-                status: 'present'
+                date: selectedDate
             }));
             await apiService.batchUpdateAttendance({ items });
             fetchData();
@@ -140,12 +145,10 @@ export function useAppData() {
     const markAllAbsent = async () => {
         try {
             setLoading(true);
-            const items = students.map(s => ({
-                student_id: s.id,
-                date: selectedDate,
-                status: 'absent'
-            }));
-            await apiService.batchUpdateAttendance({ items });
+            await apiService.batchDeleteAttendance({
+                studentIds: students.map(s => s.id),
+                date: selectedDate
+            });
             fetchData();
         } catch (error) {
             console.error('Error marking all absent:', error);

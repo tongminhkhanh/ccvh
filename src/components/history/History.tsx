@@ -23,7 +23,7 @@ export function History({ selectedDate, setSelectedDate, attendance, config }: H
                     />
                 </div>
                 <div className="text-slate-600 font-medium">
-                    Tổng số: {attendance.length} học sinh
+                    Tổng số: {attendance.filter(a => a.status === 'present').length} học sinh
                 </div>
             </div>
 
@@ -40,8 +40,8 @@ export function History({ selectedDate, setSelectedDate, attendance, config }: H
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {attendance.length > 0 ? (
-                                attendance.map((record, index) => (
+                            {attendance.filter(a => a.status === 'present').length > 0 ? (
+                                attendance.filter(a => a.status === 'present').map((record, index) => (
                                     <tr key={record.student_id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 text-sm text-slate-500">{index + 1}</td>
                                         <td className="px-6 py-4 text-sm font-mono text-slate-600">{record.student_code}</td>
@@ -70,8 +70,8 @@ export function History({ selectedDate, setSelectedDate, attendance, config }: H
                 </div>
 
                 <div className="md:hidden divide-y divide-slate-100">
-                    {attendance.length > 0 ? (
-                        attendance.map(record => (
+                    {attendance.filter(a => a.status === 'present').length > 0 ? (
+                        attendance.filter(a => a.status === 'present').map(record => (
                             <div key={record.student_id} className="p-4 flex justify-between items-center">
                                 <div>
                                     <p className="font-bold text-slate-900">{record.name}</p>
